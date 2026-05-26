@@ -11,7 +11,7 @@ const InventoryList = ({ department, role }) => {
     searchTerm, 
     setSearchTerm, 
     fetchItems, 
-    updateItem,
+    updateMetadata,
     adjustQuantity
   } = useInventory(department)
 
@@ -62,7 +62,7 @@ const InventoryList = ({ department, role }) => {
                 key={item.id} 
                 item={item} 
                 role={role} 
-                onUpdate={updateItem} 
+                onUpdateMetadata={updateMetadata} 
                 onAdjustQuantity={adjustQuantity}
               />
             ))

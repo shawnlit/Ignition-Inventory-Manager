@@ -18,7 +18,8 @@ export const useInventory = (department) => {
         .from('items')
         .select(`
           id, item_no, name, current_quantity, category, 
-          description, numbered, status, location, green_cupboard
+          description, numbered, status, location, green_cupboard,
+          unit_cost, purchase_link, vendor_name, vendor_contact, notes, bill_link
         `)
         .eq('department', department)
         .limit(100)
@@ -33,22 +34,34 @@ export const useInventory = (department) => {
     }
   }, [department])
 
-  const updateItem = async (itemId, updates) => {
+  const updateMetadata = async (itemId, sanitizedForm) => {
     try {
-      const { error } = await supabase
-        .from('items')
-        .update(updates)
-        .eq('id', itemId)
+      const { error } = await supabase.rpc('update_item_metadata', {
+        p_item_id: itemId,
+        p_name: sanitizedForm.name,
+        p_category: sanitizedForm.category,
+        p_description: sanitizedForm.description,
+        p_numbered: sanitizedForm.numbered,
+        p_status: sanitizedForm.status,
+        p_location: sanitizedForm.location,
+        p_green_cupboard: sanitizedForm.green_cupboard,
+        p_unit_cost: sanitizedForm.unit_cost,
+        p_purchase_link: sanitizedForm.purchase_link,
+        p_vendor_name: sanitizedForm.vendor_name,
+        p_vendor_contact: sanitizedForm.vendor_contact,
+        p_notes: sanitizedForm.notes,
+        p_bill_link: sanitizedForm.bill_link
+      })
 
       if (error) throw error
       
-      // Update local state
+      // Update local state directly
       setItems(prev => prev.map(item => 
-        item.id === itemId ? { ...item, ...updates } : item
+        item.id === itemId ? { ...item, ...sanitizedForm } : item
       ))
       return { success: true }
     } catch (err) {
-      console.error('Update error:', err)
+      console.error('Update metadata error:', err)
       return { success: false, error: err.message }
     }
   }
@@ -96,7 +109,7 @@ export const useInventory = (department) => {
     searchTerm, 
     setSearchTerm, 
     fetchItems, 
-    updateItem,
+    updateMetadata,
     adjustQuantity
   }
 }
