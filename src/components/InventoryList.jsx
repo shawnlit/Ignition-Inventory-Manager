@@ -25,7 +25,8 @@ const InventoryList = ({ department, role }) => {
     fetchItems, 
     updateMetadata,
     adjustQuantity,
-    createItem
+    createItem,
+    archiveItem
   } = useInventory(department)
 
   const [isAddingItem, setIsAddingItem] = useState(false)
@@ -236,6 +237,7 @@ const InventoryList = ({ department, role }) => {
                 role={role} 
                 onUpdateMetadata={updateMetadata} 
                 onAdjustQuantity={adjustQuantity}
+                onArchiveItem={archiveItem}
               />
             ))
           ) : (

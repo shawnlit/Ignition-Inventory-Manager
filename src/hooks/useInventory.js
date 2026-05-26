@@ -22,6 +22,7 @@ export const useInventory = (department) => {
           unit_cost, purchase_link, vendor_name, vendor_contact, notes, bill_link
         `)
         .eq('department', department)
+        .eq('deleted', false)
         .limit(100)
 
       if (error) throw error
@@ -104,6 +105,20 @@ export const useInventory = (department) => {
     }
   }
 
+  const archiveItem = async (itemId) => {
+    try {
+      const { error } = await supabase.rpc('archive_item', { p_item_id: itemId })
+      if (error) throw error
+      
+      // Update local state by removing the item
+      setItems(prev => prev.filter(item => item.id !== itemId))
+      return { success: true }
+    } catch (err) {
+      console.error('Archive item error:', err)
+      return { success: false, error: err.message }
+    }
+  }
+
   // Client-side filtering
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) return items
@@ -126,6 +141,7 @@ export const useInventory = (department) => {
     fetchItems, 
     updateMetadata,
     adjustQuantity,
-    createItem
+    createItem,
+    archiveItem
   }
 }

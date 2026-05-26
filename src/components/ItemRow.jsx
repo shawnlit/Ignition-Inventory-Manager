@@ -1,10 +1,13 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Save, X, Edit2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Save, X, Edit2, AlertCircle } from 'lucide-react'
 
-const ItemRow = ({ item, role, onUpdateMetadata, onAdjustQuantity }) => {
+const ItemRow = ({ item, role, onUpdateMetadata, onAdjustQuantity, onArchiveItem }) => {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isAdjustingQty, setIsAdjustingQty] = useState(false)
   const [isEditingMetadata, setIsEditingMetadata] = useState(false)
+  
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteStep, setDeleteStep] = useState(0)
   
   const [adjustmentAmount, setAdjustmentAmount] = useState(0)
   const [reason, setReason] = useState('')
@@ -116,6 +119,19 @@ const ItemRow = ({ item, role, onUpdateMetadata, onAdjustQuantity }) => {
     setSaving(false)
   }
 
+  const handleArchive = async (e) => {
+    e.stopPropagation()
+    setSaving(true)
+    const { success, error } = await onArchiveItem(item.id)
+    if (success) {
+      setIsDeleting(false)
+      setDeleteStep(0)
+    } else {
+      alert(`Archive failed: ${error}`)
+    }
+    setSaving(false)
+  }
+
   return (
     <div className="border border-black/10 transition-all duration-200 bg-white mb-2 overflow-hidden hover:border-black/30">
       {/* Collapsed View */}
@@ -159,8 +175,40 @@ const ItemRow = ({ item, role, onUpdateMetadata, onAdjustQuantity }) => {
           {role === 'admin' && (
             <div className="mt-4 pt-4 border-t border-black/10 flex flex-col gap-4">
               
-              {/* Adjust Quantity Block */}
-              {isAdjustingQty ? (
+              {/* Delete Confirmation Block */}
+              {isDeleting ? (
+                <div className="flex flex-col gap-3 w-full p-4 bg-red-50 border border-red-100" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center gap-2 text-red-900 font-bold text-sm tracking-tight uppercase">
+                    <AlertCircle size={16} /> 
+                    {deleteStep === 1 ? 'Are you sure you want to archive this item?' : 'This action will hide the item from inventory views.'}
+                  </div>
+                  <div className="flex justify-end gap-2 mt-2">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setIsDeleting(false); setDeleteStep(0); }}
+                      className="btn-secondary py-1 px-3 text-xs min-w-[80px]"
+                      disabled={saving}
+                    >
+                      CANCEL
+                    </button>
+                    {deleteStep === 1 ? (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setDeleteStep(2); }}
+                        className="bg-red-900 hover:bg-red-950 text-white font-bold text-[10px] tracking-widest py-1 px-3 uppercase min-w-[80px]"
+                      >
+                        CONFIRM
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={handleArchive}
+                        disabled={saving}
+                        className="bg-red-900 hover:bg-red-950 text-white font-bold text-[10px] tracking-widest py-1 px-3 uppercase min-w-[80px] flex items-center justify-center"
+                      >
+                        {saving ? 'ARCHIVING...' : 'FINALIZE ARCHIVE'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : isAdjustingQty ? (
                 <div className="flex items-center gap-4 w-full p-3 bg-black/5" onClick={e => e.stopPropagation()}>
                   <div className="flex flex-col gap-2 flex-1">
                     <div className="flex items-center gap-2">
@@ -237,7 +285,7 @@ const ItemRow = ({ item, role, onUpdateMetadata, onAdjustQuantity }) => {
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-4">
                     <button 
                       onClick={(e) => { e.stopPropagation(); setIsAdjustingQty(true); }}
@@ -252,6 +300,12 @@ const ItemRow = ({ item, role, onUpdateMetadata, onAdjustQuantity }) => {
                       <Edit2 size={10} /> EDIT METADATA
                     </button>
                   </div>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setIsDeleting(true); setDeleteStep(1); }}
+                    className="text-[10px] font-bold tracking-widest flex items-center gap-1 px-3 py-1 bg-red-900 text-white hover:bg-red-950 transition-all uppercase ml-auto"
+                  >
+                    DELETE
+                  </button>
                 </div>
               )}
             </div>
