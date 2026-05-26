@@ -11,7 +11,8 @@ const InventoryList = ({ department, role }) => {
     searchTerm, 
     setSearchTerm, 
     fetchItems, 
-    updateItem 
+    updateItem,
+    adjustQuantity
   } = useInventory(department)
 
   useEffect(() => {
@@ -62,6 +63,7 @@ const InventoryList = ({ department, role }) => {
                 item={item} 
                 role={role} 
                 onUpdate={updateItem} 
+                onAdjustQuantity={adjustQuantity}
               />
             ))
           ) : (

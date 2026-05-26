@@ -17,7 +17,7 @@ export const useInventory = (department) => {
       const { data, error } = await supabase
         .from('items')
         .select(`
-          id, item_no, name, quantity, category, 
+          id, item_no, name, current_quantity, category, 
           description, numbered, status, location, green_cupboard
         `)
         .eq('department', department)
@@ -53,6 +53,29 @@ export const useInventory = (department) => {
     }
   }
 
+  const adjustQuantity = async (itemId, changeAmount, reason = '') => {
+    try {
+      const { error } = await supabase.rpc('adjust_inventory', {
+        p_item_id: itemId,
+        p_change: changeAmount,
+        p_reason: reason
+      })
+
+      if (error) throw error
+
+      // Update local state by adjusting current_quantity
+      setItems(prev => prev.map(item => 
+        item.id === itemId 
+          ? { ...item, current_quantity: (item.current_quantity || 0) + changeAmount } 
+          : item
+      ))
+      return { success: true }
+    } catch (err) {
+      console.error('Adjustment error:', err)
+      return { success: false, error: err.message }
+    }
+  }
+
   // Client-side filtering
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) return items
@@ -73,6 +96,7 @@ export const useInventory = (department) => {
     searchTerm, 
     setSearchTerm, 
     fetchItems, 
-    updateItem 
+    updateItem,
+    adjustQuantity
   }
 }

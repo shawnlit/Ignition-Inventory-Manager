@@ -1,22 +1,30 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronUp, Save, X, Edit2 } from 'lucide-react'
 
-const ItemRow = ({ item, role, onUpdate }) => {
+const ItemRow = ({ item, role, onUpdate, onAdjustQuantity }) => {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
-  const [editQty, setEditQty] = useState(item.quantity)
+  const [adjustmentAmount, setAdjustmentAmount] = useState(0)
+  const [reason, setReason] = useState('')
   const [saving, setSaving] = useState(false)
 
   const formatValue = (val) => (val === null || val === undefined || val === '') ? '-' : val
 
-  const handleSave = async (e) => {
+  const handleAdjust = async (e) => {
     e.stopPropagation()
+    const amount = parseInt(adjustmentAmount) || 0
+    if (amount === 0) {
+      setIsEditing(false)
+      return
+    }
     setSaving(true)
-    const { success, error } = await onUpdate(item.id, { quantity: parseInt(editQty) || 0 })
+    const { success, error } = await onAdjustQuantity(item.id, amount, reason)
     if (success) {
       setIsEditing(false)
+      setAdjustmentAmount(0)
+      setReason('')
     } else {
-      alert(`Update failed: ${error}`)
+      alert(`Adjustment failed: ${error}`)
     }
     setSaving(false)
   }
@@ -36,7 +44,7 @@ const ItemRow = ({ item, role, onUpdate }) => {
         <div className="flex items-center gap-6">
           <div className="flex flex-col items-end">
             <span className="text-[8px] opacity-40 uppercase tracking-tighter">QTY</span>
-            <span className="font-mono font-bold text-lg">{item.quantity}</span>
+            <span className="font-mono font-bold text-lg">{item.current_quantity}</span>
           </div>
           {isExpanded ? <ChevronUp size={16} className="opacity-40" /> : <ChevronDown size={16} className="opacity-40 group-hover:opacity-100" />}
         </div>
@@ -59,27 +67,40 @@ const ItemRow = ({ item, role, onUpdate }) => {
             <div className="mt-4 pt-4 border-t border-black/10 flex items-center justify-between">
               {isEditing ? (
                 <div className="flex items-center gap-4 w-full" onClick={e => e.stopPropagation()}>
-                  <div className="flex flex-col">
-                    <label className="text-[8px] opacity-40 uppercase mb-1">EDIT QUANTITY</label>
-                    <input 
-                      type="number"
-                      value={editQty}
-                      onChange={e => setEditQty(e.target.value)}
-                      className="input-field w-24 h-9 font-mono"
-                      autoFocus
-                    />
+                  <div className="flex flex-col gap-2 flex-1">
+                    <div className="flex items-center gap-2">
+                      <label className="text-[8px] opacity-40 uppercase min-w-[80px]">ADJUSTMENT</label>
+                      <input 
+                        type="number"
+                        value={adjustmentAmount}
+                        onChange={e => setAdjustmentAmount(e.target.value)}
+                        placeholder="+/- 0"
+                        className="input-field w-24 h-9 font-mono"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-[8px] opacity-40 uppercase min-w-[80px]">REASON</label>
+                      <input 
+                        type="text"
+                        value={reason}
+                        onChange={e => setReason(e.target.value)}
+                        placeholder="Optional reason..."
+                        className="input-field flex-1 h-9 text-xs"
+                      />
+                    </div>
                   </div>
-                  <div className="flex gap-2 mt-4 ml-auto">
+                  <div className="flex flex-col gap-2 ml-auto">
                     <button 
-                      onClick={handleSave} 
+                      onClick={handleAdjust} 
                       disabled={saving}
-                      className="btn-primary py-1 px-3 text-xs flex items-center gap-1"
+                      className="btn-primary py-1 px-3 text-xs flex items-center justify-center gap-1 min-w-[80px]"
                     >
                       <Save size={12} /> {saving ? 'SAVING...' : 'SAVE'}
                     </button>
                     <button 
-                      onClick={(e) => { e.stopPropagation(); setIsEditing(false); setEditQty(item.quantity); }}
-                      className="btn-secondary py-1 px-3 text-xs flex items-center gap-1"
+                      onClick={(e) => { e.stopPropagation(); setIsEditing(false); setAdjustmentAmount(0); setReason(''); }}
+                      className="btn-secondary py-1 px-3 text-xs flex items-center justify-center gap-1 min-w-[80px]"
                     >
                       <X size={12} /> CANCEL
                     </button>
