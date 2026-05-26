@@ -89,6 +89,21 @@ export const useInventory = (department) => {
     }
   }
 
+  const createItem = async (payload) => {
+    try {
+      const { data, error } = await supabase.rpc('create_item', payload)
+      if (error) throw error
+      
+      if (data) {
+        setItems(prev => [...prev, data])
+      }
+      return { success: true, data }
+    } catch (err) {
+      console.error('Create item error:', err)
+      return { success: false, error: err.message }
+    }
+  }
+
   // Client-side filtering
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) return items
@@ -110,6 +125,7 @@ export const useInventory = (department) => {
     setSearchTerm, 
     fetchItems, 
     updateMetadata,
-    adjustQuantity
+    adjustQuantity,
+    createItem
   }
 }
